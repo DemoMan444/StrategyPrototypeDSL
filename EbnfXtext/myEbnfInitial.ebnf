@@ -1,0 +1,55 @@
+Game ::= 
+    "StrategyGameTextbasedPrototype"
+    CreateGame
+    AssignEachPlayerObjects
+    SetRandomness
+
+CreateGame ::= 
+    "CreateGame" "("
+        "StartingResources:" ResourceList ","
+        "MaxResources:" ResourceList ","
+        "TimeSetup:" TimeSetup
+    ")"
+
+AssignEachPlayerObjects ::= 
+    "AssignEachPlayerObjects" "("
+        "Units:" UnitsList ","
+    ")"
+
+SetRandomness ::= 
+    "SetRandomness" "("
+        "Randomness:" Attacking "vs" DefendingWithSpecificStoneGivesDisadvantageNr "->" RandomValue
+    ")"
+
+TimeSetup ::= 
+      "TurnBased" Number
+    | "RealTime"
+
+ResourceList ::= 
+    Resource ("," Resource)*
+
+UnitsList ::= 
+    Unit ("," Unit)*
+
+(* Basics *)
+
+Resource ::= 
+    ResourceName "=" Number
+
+ResourceName ::= 
+    Letter (Letter | Digit)*
+
+Number ::= 
+    Digit+
+
+RandomValue ::= 
+    Number
+    | Number ".." Number
+
+Letter ::= 
+    "A" | ... | "Z"
+    | "a" | ... | "z"
+
+Digit ::= 
+    "0" | "1" | "2" | "3" | "4"
+    | "5" | "6" | "7" | "8" | "9"
