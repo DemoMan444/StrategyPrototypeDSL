@@ -1,0 +1,33 @@
+StrategyGameTextbasedPrototype 
+
+CreateGame (StartingResources: Gold=5000, Stone=500, Food=100,
+MaxResources: Gold=10000, Stone=1000, Food=100,
+TimeSetup: TurnBased 15)
+
+AssignEachPlayerObjects(
+    Units: unit Bowman, unit Swordsman
+)
+
+// Minus not allowed atm else -5..-25
+// Or better using DOUBLE but atm not working
+
+SetRandomness(
+    Randomness: Bowman vs Stone -> 5..25
+)
+
+SetDecisions(
+    decision ThereIsSiegeWar
+    decision NoFoodProduction
+    decision Attack
+    decision Defend
+    decision Build
+    decision Recruit
+)
+
+SetWinningLosing(
+    condition TwentyThousandMoreGoldThanEnemy
+    condition ThousandUnitsMoreThanEnemy
+    condition TwentyThousandLessGoldThanEnemy
+    condition ThousandUnitsLessThanEnemy
+    )
+)
