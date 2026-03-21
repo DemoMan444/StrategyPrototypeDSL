@@ -1,0 +1,126 @@
+setup GameSetup {
+    player1 { PlayerOne }
+    player2 { PlayerTwo }
+}
+
+player PlayerOne {
+	
+	VAR var stamina = 100;
+	
+    health = 100
+
+    resources {
+        RESOURCE Resource [Gold] = 5000;
+        RESOURCE Resource [Stone] = 500;
+        RESOURCE Resource [Food] = 100;
+    }
+
+    military {
+        MILITARY Military [Bowman]   = 4;
+        MILITARY Military [Swordsman]= 3;
+    }
+}
+
+player PlayerTwo {
+    VAR var stamina = 100;
+
+	health = 100
+	
+    resources {
+        RESOURCE Resource [Gold] = 5000;
+        RESOURCE Resource [Stone] = 500;
+        RESOURCE Resource [Food] = 100;
+    }
+
+    military {
+        MILITARY Military [Bowman]   = 4;
+        MILITARY Military [Swordsman]= 3;
+    }
+}
+
+condition TwentyThousandMoreGoldThanEnemy   
+    PlayerOne.Gold - PlayerTwo.Gold > 20000;
+
+condition ThousandUnitsMoreThanEnemy
+    (PlayerOne.Bowman + PlayerOne.Swordsman) -
+    (PlayerTwo.Bowman + PlayerTwo.Swordsman) > 1000;
+
+condition TwentyThousandLessGoldThanEnemy
+    PlayerTwo.Gold - PlayerOne.Gold > 20000;
+
+condition ThousandUnitsLessThanEnemy
+    (PlayerTwo.Bowman + PlayerTwo.Swordsman) -
+    (PlayerOne.Bowman + PlayerOne.Swordsman) > 1000;
+
+rule VictoryRule {
+    win:  TwentyThousandMoreGoldThanEnemy or ThousandUnitsMoreThanEnemy
+    lose: TwentyThousandLessGoldThanEnemy or ThousandUnitsLessThanEnemy
+}
+
+decision ThereIsSiegeWar {
+    print "Siege war active";
+}
+
+decision NoFoodProduction {
+    print "No food production this turn";
+    PlayerOne.Food = PlayerOne.Food - 15;
+    PlayerTwo.Food = PlayerTwo.Food - 15;
+}
+
+decision Attack {
+    print "Attacking enemy castle and army";
+    VAR var strength = 12 * PlayerOne.Bowman + 25 * PlayerOne.Swordsman;
+    PlayerTwo.stamina = PlayerTwo.stamina - (strength / 20);
+    print "Enemy stamina lost";
+}
+
+decision Defend {
+    print "Defending position - taking less damage this turn";
+}
+
+decision Build {
+		if(PlayerOne.Stone > 100){
+			PlayerOne.Stone = PlayerOne.Stone - 180;
+		}
+        
+}
+decision Recruit {
+    print "Recruiting soldiers";
+
+    if (PlayerOne.Gold > 200 and PlayerOne.Food > 15) {
+        PlayerOne.Gold = PlayerOne.Gold - 200;
+        PlayerOne.Food = PlayerOne.Food - 15;
+        PlayerOne.Bowman = PlayerOne.Bowman + 6;
+        print "Recruited 6 bowmen";
+    }
+    elif (PlayerOne.Gold > 280 and PlayerOne.Food > 20) {
+        PlayerOne.Gold = PlayerOne.Gold - 280;
+        PlayerOne.Food = PlayerOne.Food - 20;
+        PlayerOne.Swordsman = PlayerOne.Swordsman + 5;
+        print "Recruited 5 swordsmen";
+    }
+    else {
+        print "Cannot recruit – missing gold or food";
+    }
+}
+
+decisions CoreDecisions {
+    ThereIsSiegeWar, NoFoodProduction, Attack, Defend, Build, Recruit
+}
+
+script DemoGameFlow {
+    turn 1: PlayerOne Recruit;
+    turn 2: PlayerTwo Build;
+    turn 3: PlayerOne Attack;
+    turn 4: PlayerTwo Defend;
+    turn 5: PlayerOne Build;
+    turn 6: PlayerTwo Recruit;
+    turn 7: PlayerOne Attack;
+}
+
+game StrategyGameTextbasedPrototype {
+    setup     { GameSetup }
+    rule      { VictoryRule }
+    decisions { CoreDecisions }
+    script    { DemoGameFlow }
+}
