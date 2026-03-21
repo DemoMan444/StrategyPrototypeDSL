@@ -1,120 +1,181 @@
-VAR var maxTurns = 20;
-VAR var globalBonus = (5 + 3) * 2;
-VAR var threshold = 100;
+grammar org.example.games.Games with org.eclipse.xtext.common.Terminals
 
-player hero {
-    VAR var baseDamage = 10;
-    VAR var agility = 4 * 2;
-    VAR var stamina = 50 + (10 * 2);
+generate games "http://www.example.org/games/Games"
 
-    health = 200
+Model:
+    elements+=TopLevel*
+;
 
-    resources {
-        RESOURCE Resource[gold] = 100 + 50 * 2;
-        RESOURCE Resource[mana] = 40 + 10;
-    }
+TopLevel:
+      Game
+    | Setup
+    | Rule
+    | Player
+    | Decisions
+    | IntVar
+    | Script
+    | Condition
+    | Decision
+;
 
-    military {
-        MILITARY Military[soldiers] = 20 * 3;
-    }
-}
 
-player villain {
-    VAR var baseDamage = 12;
-    VAR var agility = 3 * 3;
-    VAR var stamina = 60 + (5 * 4);
 
-    health = 220
+Game:
+    'game' name=ID '{'
+        'setup'     '{' setup=[Setup|ID]        '}'
+        'rule'      '{' rule=[Rule|ID]          '}'
+        'decisions' '{' decisions=[Decisions|ID] '}'
+        'script'    '{' script=[Script|ID]      '}'
+    '}'
+;
 
-    resources {
-        RESOURCE Resource[gold] = 80 + 10 * 3;
-        RESOURCE Resource[mana] = 30 + 15;
-    }
+Setup:
+    'setup' name=ID '{'
+        vars+=IntVar*
+        ('timelimit' limitName=ID)?            // <-- plain ID, no [IntVar|ID]
+        'player1' '{' player1=[Player|ID] '}'
+        'player2' '{' player2=[Player|ID] '}'
+    '}'
+;
 
-    military {
-        MILITARY Military[soldiers] = 25 * 2;
-    }
-}
 
-condition heroWins 
-    (hero.baseDamage * 2 + hero.agility) > 
-    (villain.baseDamage + villain.agility)
-    and hero.baseDamage != 0;
 
-condition heroLoses 
-    villain.baseDamage * 3 > hero.stamina
-    or !(hero.agility > 0);
+enum VarKind: VAR | RESOURCE | MILITARY;
 
-rule battleRule {
-    win: heroWins
-    lose: heroLoses
-}
+IntVar:
+    kind=VarKind
+    (
+        'var'      name=ID
+      | 'Resource' '[' name=ID ']'
+      | 'Military' '[' name=ID ']'
+    )
+    '=' init=Expression ';'
+;
 
-decision attack {
-    hero.baseDamage = hero.baseDamage + (5 * 2);
-    villain.baseDamage = villain.baseDamage - (hero.agility / 2);
 
-    if ((hero.baseDamage + hero.agility) > threshold) {
-        hero.baseDamage = hero.baseDamage + globalBonus;
-        print "Hero empowered!";
-    }
-    elif (villain.baseDamage * 2 > hero.stamina) {
-        hero.stamina = hero.stamina - 15;
-        print "Hero stamina reduced!";
-    }
-    else {
-        villain.baseDamage = villain.baseDamage - 3;
-        print "Balanced exchange!";
-    }
-}
+Assignment:
+    target=LValue '=' expression=Expression ';'
+;
 
-decision heal {
-    hero.stamina = hero.stamina + (20 + 5);
-    hero.baseDamage = hero.baseDamage - (2 * 3);
 
-    if (hero.stamina > 120 and hero.baseDamage > 10) {
-        hero.stamina = hero.stamina + (globalBonus / 2);
-        print "Major recovery!";
-    }
-    else {
-        hero.stamina = hero.stamina + 5;
-        print "Minor recovery!";
-    }
-}
 
-decision counterAttack {
-    villain.baseDamage = villain.baseDamage + (villain.agility * 2);
-    hero.stamina = hero.stamina - ((villain.baseDamage / 2) + 5);
+Player:
+    'player' name=ID '{'
+        vars+=IntVar*
+        'health' '=' health=INT
+        'resources' '{' resources+=IntVar* '}'
+        ('military' '{' militaryResources+=IntVar* '}')?
+    '}'
+;
 
-    if (hero.stamina < 50 or villain.baseDamage > 100) {
-        villain.baseDamage = villain.baseDamage + 10;
-        print "Villain rage mode!";
-    }
-}
 
-decisions availableDecisions {
-    attack, heal, counterAttack
-}
+Rule:
+    'rule' name=ID '{'
+        'win'  ':' winCondition=[Condition|ID]
+        'lose' ':' loseCondition=[Condition|ID]
+    '}'
+;
 
-setup battleSetup {
-    VAR var turnCounter = 0;
-    timelimit maxTurns
+Condition:
+    'condition' name=ID boolexp=Expression ';'
+;
 
-    player1 { hero }
-    player2 { villain }
-}
 
-script battleScript {
-    turn 1: hero attack;
-    turn 2: villain counterAttack;
-    turn 3: hero heal;
-    turn 4: villain attack;
-    turn 5: hero attack;
-}
 
-game EpicBattle {
-    setup { battleSetup }
-    rule { battleRule }
-    decisions { availableDecisions }
-    script { battleScript }
-}
+Decisions:
+    'decisions' name=ID '{'
+        decisions+=[Decision|ID] (',' decisions+=[Decision|ID])*
+    '}'
+;
+
+Decision:
+    'decision' name=ID body=Block
+;
+
+
+
+Block:
+    '{' statements+=Statement* '}'
+;
+
+ExpressionStmt:
+    expr=Expression ';'
+;
+
+Statement:
+      Conditional
+    | PrintStmt
+    | ExpressionStmt
+    | IntVar
+    | Assignment
+;
+
+PrintStmt:
+    'print' value=STRING ';'
+;
+
+
+
+Script:
+    'script' name=ID '{'
+        turns+=Turns*
+    '}'
+;
+
+Turns:
+    'turn' index=INT ':'
+        player=[Player|ID]
+        decision=[Decision|ID]
+        ';'
+;
+
+
+
+Conditional:
+    'if' '(' condition=Expression ')'
+        thenBlock=Block
+        ('elif' '(' elifConditions+=Expression ')' elifBlocks+=Block)*
+        ('else' elseBlock=Block)?
+;
+
+
+
+
+LValue:
+      {PlayerVarLValue} player=[Player|ID] '.' varName=ID   
+    | {VarLValue}      varName=ID                          
+;
+
+
+
+Expression:
+    OrExpression
+;
+
+OrExpression returns Expression:
+    AndExpression ({OrExpression.left=current} 'or' right=AndExpression)*
+;
+
+AndExpression returns Expression:
+    ComparisonExpression ({AndExpression.left=current} 'and' right=ComparisonExpression)*
+;
+
+ComparisonExpression returns Expression:
+    Addition ({Comparison.left=current} op=('=='|'!='|'<'|'>') right=Addition)*
+;
+
+Addition returns Expression:
+    Multiplication (({Plus.left=current} '+' | {Minus.left=current} '-') right=Multiplication)*
+;
+
+Multiplication returns Expression:
+    Primary (({Mult.left=current} '*' | {Div.left=current} '/') right=Primary)*
+;
+
+Primary returns Expression:
+      '(' Expression ')'
+    | {IntConstant}  value=INT
+    | {BoolConstant} value=('true'|'false')
+    | {LValueExpr}   target=LValue
+    | {Not} '!' expression=Primary
+;

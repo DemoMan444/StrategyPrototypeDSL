@@ -1,168 +1,155 @@
-grammar org.example.games.Games with org.eclipse.xtext.common.Terminals
+// =========================
+// GLOBAL VARIABLES
+// =========================
 
-generate games "http://www.example.org/games/Games"
+VAR var maxTurns    = 20;
+VAR var globalBonus = (5 + 3) * 2;
+VAR var threshold   = 100;
 
+// =========================
+// PLAYERS
+// =========================
 
-Model:
-    elements+=TopLevel*
-;
+player hero {
+    VAR var baseDamage = 10;
+    VAR var agility    = 4 * 2;
+    VAR var stamina    = 50 + (10 * 2);
 
-TopLevel:
-      Game
-    | Setup
-    | Rule
-    | Player
-    | Decisions
-    | IntVar
-    | Script
-    | Condition
-    | Decision
-;
+    health = 200
 
+    resources {
+        RESOURCE Resource[gold] = 100 + 50 * 2;
+        RESOURCE Resource[mana] = 40 + 10;
+    }
 
-Game:
-    'game' name=ID '{'
-        'setup'    '{' setup=[Setup|ID]        '}'
-        'rule'     '{' rule=[Rule|ID]          '}'
-        'decisions' '{' decisions=[Decisions|ID] '}'
-        'script'   '{' script=[Script|ID]      '}'
-    '}'
-;
+    military {
+        MILITARY Military[soldiers] = 20 * 3;
+    }
+}
 
+player villain {
+    VAR var baseDamage = 12;
+    VAR var agility    = 3 * 3;
+    VAR var stamina    = 60 + (5 * 4);
 
-Setup:
-    'setup' name=ID '{'
-        vars+=IntVar*
-        ('timelimit' limit=[IntVar|ID])?
-        'player1' '{' player1=[Player|ID] '}'
-        'player2' '{' player2=[Player|ID] '}'
-    '}'
-;
+    health = 220
 
-enum VarKind: VAR | RESOURCE | MILITARY;
+    resources {
+        RESOURCE Resource[gold] = 80 + 10 * 3;
+        RESOURCE Resource[mana] = 30 + 15;
+    }
 
+    military {
+        MILITARY Military[soldiers] = 25 * 2;
+    }
+}
 
+// =========================
+// CONDITIONS
+// =========================
 
-IntVar:
-    kind=VarKind
-    (
-        'var'      name=ID
-      | 'Resource' '[' name=ID ']'
-      | 'Military' '[' name=ID ']'
-    )
-    '=' init=Expression ';'
-;
-Assignment:
-    target=LValue '=' expression=Expression ';'
-;
+condition heroWins
+    (hero.baseDamage * 2 + hero.agility) >
+    (villain.baseDamage + villain.agility)
+    and hero.baseDamage != 0;
 
-Player:
-    'player' name=ID '{'
-        vars+=IntVar*
-        'health' '=' health=INT
-        'resources' '{' resources+=IntVar* '}'
-        ('military' '{' militaryResources+=IntVar* '}')?
-    '}'
-;
+condition heroLoses
+    villain.baseDamage * 3 > hero.stamina
+    or !(hero.agility > 0);
 
+// =========================
+// RULE
+// =========================
 
-Rule:
-    'rule' name=ID '{'
-        'win'  ':' winCondition=[Condition|ID]
-        'lose' ':' loseCondition=[Condition|ID]
-    '}'
-;
+rule battleRule {
+    win:  heroWins
+    lose: heroLoses
+}
 
-Condition:
-    'condition' name=ID boolexp = Expression ";"
-;
+// =========================
+// DECISIONS
+// =========================
 
+decision attack {
+    hero.baseDamage    = hero.baseDamage + (5 * 2);
+    villain.baseDamage = villain.baseDamage - (hero.agility / 2);
 
+    if ((hero.baseDamage + hero.agility) > threshold) {
+        hero.baseDamage = hero.baseDamage + globalBonus;
+        print "Hero empowered!";
+    }
+    elif (villain.baseDamage * 2 > hero.stamina) {
+        hero.stamina = hero.stamina - 15;
+        print "Hero stamina reduced!";
+    }
+    else {
+        villain.baseDamage = villain.baseDamage - 3;
+        print "Balanced exchange!";
+    }
+}
 
-Decisions:
-    'decisions' name=ID '{'
-        decisions+=[Decision|ID] (',' decisions+=[Decision|ID])*
-    '}'
-;
+decision heal {
+    hero.stamina    = hero.stamina + (20 + 5);
+    hero.baseDamage = hero.baseDamage - (2 * 3);
 
-Decision:
-    'decision' name=ID body=Block
-;
+    if (hero.stamina > 120 and hero.baseDamage > 10) {
+        hero.stamina = hero.stamina + (globalBonus / 2);
+        print "Major recovery!";
+    }
+    else {
+        hero.stamina = hero.stamina + 5;
+        print "Minor recovery!";
+    }
+}
 
-Block:
-    '{' 
-        statements += Statement* '}'
-;
+decision counterAttack {
+    villain.baseDamage = villain.baseDamage + (villain.agility * 2);
+    hero.stamina       = hero.stamina - ((villain.baseDamage / 2) + 5);
 
-ExpressionStmt:
-    expr=Expression ';'
-;
+    if (hero.stamina < 50 or villain.baseDamage > 100) {
+        villain.baseDamage = villain.baseDamage + 10;
+        print "Villain rage mode!";
+    }
+}
 
+// group of available decisions
+decisions availableDecisions {
+    attack, heal, counterAttack
+}
 
-Statement:
-    Conditional | PrintStmt  | ExpressionStmt | IntVar | Assignment
-;
+// =========================
+// SETUP
+// =========================
 
+setup battleSetup {
+    VAR var turnCounter = 0;
+    timelimit maxTurns
 
-PrintStmt:
-    'print' value=STRING ';'
-;
+    player1 { hero }
+    player2 { villain }
+}
 
+// =========================
+// SCRIPT
+// =========================
 
-Script:
-	"script" (name=ID)? "{"
-	turns += Turns*
-	"}"	
-;
-
-Turns:
-    'turn' index=INT ':' 
-        player=[Player|ID]               
-        decision=[Decision|ID]               
-        ';'
-;
-
-Conditional:
-    'if' '(' condition=Expression ')' 
-        thenBlock=Block
-        ('elif' '(' elifConditions+=Expression ')' elifBlocks+=Block)*
-        ('else' elseBlock=Block)?
-;
-
-
-
-
-LValue:
-    // Look for the DOT first to decide if it's a Player variable
-    {PlayerVarLValue} player=[Player|ID] '.' var=[IntVar|ID]  
-    | {VarLValue} var=[IntVar|ID]
-;
-
-Expression:
-    OrExpression;
-
-OrExpression returns Expression:
-    AndExpression ({OrExpression.left=current} 'or' right=AndExpression)*;
-
-AndExpression returns Expression:
-    ComparisonExpression ({AndExpression.left=current} 'and' right=ComparisonExpression)*;
-
-ComparisonExpression returns Expression:
-    Addition ({Comparison.left=current} op=('=='|'!='|'<'|'>') right=Addition)*;
-
-Addition returns Expression:
-    Multiplication (({Plus.left=current} '+' | {Minus.left=current} '-') right=Multiplication)*;
-
-Multiplication returns Expression:
-    Primary (({Mult.left=current} '*' | {Div.left=current} '/') right=Primary)*;
-
-Primary returns Expression:
-    '(' Expression ')' 
-    | {IntConstant} value=INT 
-    | {BoolConstant} value=('true'|'false') 
-    | {LValueExpr} target=LValue  
-    | {Not} '!' expression=Primary
-;
+script battleScript {
+    turn 1: hero   attack;
+    turn 2: villain counterAttack;
+    turn 3: hero   heal;
+    turn 4: villain attack;
+    turn 5: hero   attack;
+}
 
 
+// =========================
+// GAME
+// =========================
 
+game EpicBattle {
+    setup    { battleSetup }
+    rule     { battleRule }
+    decisions{ availableDecisions }
+    script   { battleScript }
+
+}
