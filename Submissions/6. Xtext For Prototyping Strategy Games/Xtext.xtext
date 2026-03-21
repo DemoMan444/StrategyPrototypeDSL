@@ -16,9 +16,6 @@ TopLevel:
     | Script
     | Condition
     | Decision
-        // From previous xtext
-    //| Unit
-    //| Resource
 ;
 
 
@@ -74,8 +71,8 @@ Player:
 
 Rule:
     'rule' name=ID '{'
-        'win'  ':' winCondition=[Condition|ID]
-        'lose' ':' loseCondition=[Condition|ID]
+        'win'  ':'  winConditions+= [Condition|ID] ('or' winConditions+= [Condition|ID])*
+		'lose' ':' loseConditions+= [Condition|ID] ('or' loseConditions+= [Condition|ID])*
     '}'
 ;
 
@@ -182,52 +179,3 @@ Primary returns Expression:
     | {LValueExpr}   target=LValue
     | {Not} '!' expression=Primary
 ;
-
-/*
-StrategyGame:
-    'StrategyGameTextbasedPrototype'
-    createGame=CreateGame
-    assignEachPlayerObjects=AssignEachPlayerObjects
-    setRandomness=SetRandomness
-    setDecisions=SetStrategyDecisions
-    setWinningLosing=SetStrategyWinningLosing
-;
-
-CreateGame:
-    'CreateGame' '('
-        'StartingResources:' startingResources=ResourceList ','
-        'MaxResources:' maxResources=ResourceList
-    ')'
-;
-
-ResourceList:
-    resources+=StrategyResource (',' resources+=StrategyResource)*
-;
-
-AssignEachPlayerObjects:
-    'AssignEachPlayerObjects' '('
-        'Units:' units+=StrategyUnit (',' units+=StrategyUnit)*
-    ')'
-;
-
-SetRandomness:
-    'SetRandomness' '('
-        'Randomness:' attacking=[StrategyUnit|ID]
-        'vs' defending=[StrategyResource|ID]
-        '->' result=RandomValueRange
-    ')'
-;
-
-Resource:
-    name=ID '=' amount=INT
-;
-
-Unit:
-    'unit' name=ID
-;
-
-RandomValueRange:
-      value=INT
-    | min=INT '..' max=INT
-;
-*/
