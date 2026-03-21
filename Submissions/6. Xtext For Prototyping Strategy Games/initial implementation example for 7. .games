@@ -1,3 +1,9 @@
+// In strategy games heroes or leaders often determine outcomes
+// This here is a game implementation where
+// Hero vs. Hero(Villain) is checked
+// Thus military is left unused at the moment
+// So is gold and mana
+
 // =========================
 // GLOBAL VARIABLES
 // =========================
