@@ -1,0 +1,80 @@
+grammar org.example.domainmodel.Domainmodel with org.eclipse.xtext.common.Terminals
+
+generate domainmodel "http://www.example.org/domainmodel/Domainmodel"
+
+Decision:
+    'decision' name=ID '{'
+        logic+=DecisionElement*
+    '}'
+;
+
+DecisionElement:
+    IfStatement | Assignment | ActionCall;
+
+IfStatement:
+    'if' '(' condition=Expression ')' '{'
+        thenEvents+=DecisionElement*
+    '}' 
+    ('else' '{' 
+        elseEvents+=DecisionElement* '}')?
+;
+
+Assignment:
+    variable=[Resource|ID] '=' value=Expression ';'
+;
+
+ActionCall:
+    'do' actionName=ID '(' ')' ';'
+;
+
+SetWinningLosing:
+    'SetWinningLosing' '('
+        'WinIf:' winCondition=Expression ','
+        'LoseIf:' loseCondition=Expression
+    ')'
+;
+
+TimeSetup:
+      {TimeSetup} 'TurnBased' turns=INT
+    | {TimeSetup} 'RealTime'
+;
+
+Resource:
+    name=ID '=' amount=INT
+;
+
+Unit:
+    'unit' name=ID
+;
+
+TakeDecision:
+    'TakeDecision' '('
+         decisions+=[Decision|ID] (',' decisions+=[Decision|ID])*
+    ')'
+;
+
+
+Expression:
+    OrExpression;
+
+OrExpression returns Expression:
+    AndExpression ({OrExpression.left=current} 'or' right=AndExpression)*;
+
+AndExpression returns Expression:
+    ComparisonExpression ({AndExpression.left=current} 'and' right=ComparisonExpression)*;
+
+ComparisonExpression returns Expression:
+    Addition ({Comparison.left=current} op=('=='|'!='|'<'|'>') right=Addition)*;
+
+Addition returns Expression:
+    Multiplication (({Plus.left=current} '+' | {Minus.left=current} '-') right=Multiplication)*;
+
+Multiplication returns Expression:
+    Primary (({Mult.left=current} '*' | {Div.left=current} '/') right=Primary)*;
+
+Primary returns Expression:
+    '(' Expression ')' |
+    {IntConstant} value=INT |
+    {BoolConstant} value=('true'|'false') |
+    {VariableRef} ref=[Resource|ID] | 
+    {Not} '!' expression=Primary;
