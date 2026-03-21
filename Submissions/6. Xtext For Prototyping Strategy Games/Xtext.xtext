@@ -1,58 +1,142 @@
-grammar org.example.domainmodel.Domainmodel with org.eclipse.xtext.common.Terminals
+grammar org.example.games.Games with org.eclipse.xtext.common.Terminals
 
-generate domainmodel "http://www.example.org/domainmodel/Domainmodel"
+generate games "http://www.example.org/games/Games"
 
-Decision:
-    'decision' name=ID '{'
-        logic+=DecisionElement*
+
+Model:
+    elements+=TopLevel*
+;
+
+TopLevel:
+      Game
+    | Setup
+    | Rule
+    | Player
+    | Decisions
+    | IntVar
+    | Script
+    | Condition
+    | Decision
+;
+
+
+Game:
+    'game' name=ID '{'
+        'setup'    '{' setup=[Setup|ID]        '}'
+        'rule'     '{' rule=[Rule|ID]          '}'
+        'decisions' '{' decisions=[Decisions|ID] '}'
+        'script'   '{' script=[Script|ID]      '}'
     '}'
 ;
 
-DecisionElement:
-    IfStatement | Assignment | ActionCall;
 
-IfStatement:
-    'if' '(' condition=Expression ')' '{'
-        thenEvents+=DecisionElement*
-    '}' 
-    ('else' '{' 
-        elseEvents+=DecisionElement* '}')?
+Setup:
+    'setup' name=ID '{'
+        vars+=IntVar*
+        ('timelimit' limit=[IntVar|ID])?
+        'player1' '{' player1=[Player|ID] '}'
+        'player2' '{' player2=[Player|ID] '}'
+    '}'
 ;
 
+enum VarKind: VAR | RESOURCE | MILITARY;
+
+
+
+IntVar:
+    kind=VarKind
+    (
+        'var'      name=ID
+      | 'Resource' '[' name=ID ']'
+      | 'Military' '[' name=ID ']'
+    )
+    '=' init=Expression ';'
+;
 Assignment:
-    variable=[Resource|ID] '=' value=Expression ';'
+    target=LValue '=' expression=Expression ';'
 ;
 
-ActionCall:
-    'do' actionName=ID '(' ')' ';'
+Player:
+    'player' name=ID '{'
+        vars+=IntVar*
+        'health' '=' health=INT
+        'resources' '{' resources+=IntVar* '}'
+        ('military' '{' militaryResources+=IntVar* '}')?
+    '}'
 ;
 
-SetWinningLosing:
-    'SetWinningLosing' '('
-        'WinIf:' winCondition=Expression ','
-        'LoseIf:' loseCondition=Expression
-    ')'
+
+Rule:
+    'rule' name=ID '{'
+        'win'  ':' winCondition=[Condition|ID]
+        'lose' ':' loseCondition=[Condition|ID]
+    '}'
 ;
 
-TimeSetup:
-      {TimeSetup} 'TurnBased' turns=INT
-    | {TimeSetup} 'RealTime'
+Condition:
+    'condition' name=ID boolexp = Expression ";"
 ;
 
-Resource:
-    name=ID '=' amount=INT
+
+
+Decisions:
+    'decisions' name=ID '{'
+        decisions+=[Decision|ID] (',' decisions+=[Decision|ID])*
+    '}'
 ;
 
-Unit:
-    'unit' name=ID
+Decision:
+    'decision' name=ID body=Block
 ;
 
-TakeDecision:
-    'TakeDecision' '('
-         decisions+=[Decision|ID] (',' decisions+=[Decision|ID])*
-    ')'
+Block:
+    '{' 
+        statements += Statement* '}'
 ;
 
+ExpressionStmt:
+    expr=Expression ';'
+;
+
+
+Statement:
+    Conditional | PrintStmt  | ExpressionStmt | IntVar | Assignment
+;
+
+
+PrintStmt:
+    'print' value=STRING ';'
+;
+
+
+Script:
+	"script" (name=ID)? "{"
+	turns += Turns*
+	"}"	
+;
+
+Turns:
+    'turn' index=INT ':' 
+        player=[Player|ID]               
+        decision=[Decision|ID]               
+        ';'
+;
+
+Conditional:
+    'if' '(' condition=Expression ')' 
+        thenBlock=Block
+        ('elif' '(' elifConditions+=Expression ')' elifBlocks+=Block)*
+        ('else' elseBlock=Block)?
+;
+
+
+
+
+LValue:
+    // Look for the DOT first to decide if it's a Player variable
+    {PlayerVarLValue} player=[Player|ID] '.' var=[IntVar|ID]  
+    | {VarLValue} var=[IntVar|ID]
+;
 
 Expression:
     OrExpression;
@@ -73,8 +157,12 @@ Multiplication returns Expression:
     Primary (({Mult.left=current} '*' | {Div.left=current} '/') right=Primary)*;
 
 Primary returns Expression:
-    '(' Expression ')' |
-    {IntConstant} value=INT |
-    {BoolConstant} value=('true'|'false') |
-    {VariableRef} ref=[Resource|ID] | 
-    {Not} '!' expression=Primary;
+    '(' Expression ')' 
+    | {IntConstant} value=INT 
+    | {BoolConstant} value=('true'|'false') 
+    | {LValueExpr} target=LValue  
+    | {Not} '!' expression=Primary
+;
+
+
+

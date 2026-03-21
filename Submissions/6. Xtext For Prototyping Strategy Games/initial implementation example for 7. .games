@@ -1,33 +1,120 @@
-StrategyGameTextbasedPrototype 
+VAR var maxTurns = 20;
+VAR var globalBonus = (5 + 3) * 2;
+VAR var threshold = 100;
 
-CreateGame (StartingResources: Gold=5000, Stone=500, Food=100,
-MaxResources: Gold=10000, Stone=1000, Food=100,
-TimeSetup: TurnBased 15)
+player hero {
+    VAR var baseDamage = 10;
+    VAR var agility = 4 * 2;
+    VAR var stamina = 50 + (10 * 2);
 
-AssignEachPlayerObjects(
-    Units: unit Bowman, unit Swordsman
-)
+    health = 200
 
-// Minus not allowed atm else -5..-25
-// Or better using DOUBLE but atm not working
+    resources {
+        RESOURCE Resource[gold] = 100 + 50 * 2;
+        RESOURCE Resource[mana] = 40 + 10;
+    }
 
-SetRandomness(
-    Randomness: Bowman vs Stone -> 5..25
-)
+    military {
+        MILITARY Military[soldiers] = 20 * 3;
+    }
+}
 
-SetDecisions(
-    decision ThereIsSiegeWar
-    decision NoFoodProduction
-    decision Attack
-    decision Defend
-    decision Build
-    decision Recruit
-)
+player villain {
+    VAR var baseDamage = 12;
+    VAR var agility = 3 * 3;
+    VAR var stamina = 60 + (5 * 4);
 
-SetWinningLosing(
-    condition TwentyThousandMoreGoldThanEnemy
-    condition ThousandUnitsMoreThanEnemy
-    condition TwentyThousandLessGoldThanEnemy
-    condition ThousandUnitsLessThanEnemy
-    )
-)
+    health = 220
+
+    resources {
+        RESOURCE Resource[gold] = 80 + 10 * 3;
+        RESOURCE Resource[mana] = 30 + 15;
+    }
+
+    military {
+        MILITARY Military[soldiers] = 25 * 2;
+    }
+}
+
+condition heroWins 
+    (hero.baseDamage * 2 + hero.agility) > 
+    (villain.baseDamage + villain.agility)
+    and hero.baseDamage != 0;
+
+condition heroLoses 
+    villain.baseDamage * 3 > hero.stamina
+    or !(hero.agility > 0);
+
+rule battleRule {
+    win: heroWins
+    lose: heroLoses
+}
+
+decision attack {
+    hero.baseDamage = hero.baseDamage + (5 * 2);
+    villain.baseDamage = villain.baseDamage - (hero.agility / 2);
+
+    if ((hero.baseDamage + hero.agility) > threshold) {
+        hero.baseDamage = hero.baseDamage + globalBonus;
+        print "Hero empowered!";
+    }
+    elif (villain.baseDamage * 2 > hero.stamina) {
+        hero.stamina = hero.stamina - 15;
+        print "Hero stamina reduced!";
+    }
+    else {
+        villain.baseDamage = villain.baseDamage - 3;
+        print "Balanced exchange!";
+    }
+}
+
+decision heal {
+    hero.stamina = hero.stamina + (20 + 5);
+    hero.baseDamage = hero.baseDamage - (2 * 3);
+
+    if (hero.stamina > 120 and hero.baseDamage > 10) {
+        hero.stamina = hero.stamina + (globalBonus / 2);
+        print "Major recovery!";
+    }
+    else {
+        hero.stamina = hero.stamina + 5;
+        print "Minor recovery!";
+    }
+}
+
+decision counterAttack {
+    villain.baseDamage = villain.baseDamage + (villain.agility * 2);
+    hero.stamina = hero.stamina - ((villain.baseDamage / 2) + 5);
+
+    if (hero.stamina < 50 or villain.baseDamage > 100) {
+        villain.baseDamage = villain.baseDamage + 10;
+        print "Villain rage mode!";
+    }
+}
+
+decisions availableDecisions {
+    attack, heal, counterAttack
+}
+
+setup battleSetup {
+    VAR var turnCounter = 0;
+    timelimit maxTurns
+
+    player1 { hero }
+    player2 { villain }
+}
+
+script battleScript {
+    turn 1: hero attack;
+    turn 2: villain counterAttack;
+    turn 3: hero heal;
+    turn 4: villain attack;
+    turn 5: hero attack;
+}
+
+game EpicBattle {
+    setup { battleSetup }
+    rule { battleRule }
+    decisions { availableDecisions }
+    script { battleScript }
+}
