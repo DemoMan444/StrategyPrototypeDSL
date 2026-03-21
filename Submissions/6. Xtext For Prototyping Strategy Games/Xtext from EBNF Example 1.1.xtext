@@ -39,19 +39,19 @@ SetRandomness:
 
 SetDecisions:
     'SetDecisions' '('
-        decisions+=Decision*
+        decisions+=Decision+
     ')'
 ;
 
 SetWinningLosing:
     'SetWinningLosing' '('
-        conditions+=Condition*
+        conditions+=Condition+
     ')'
 ;
 
 TimeSetup:
-      'TurnBased' turns=INT
-    | 'RealTime'
+      {TimeSetup} 'TurnBased' turns=INT
+    | {TimeSetup} 'RealTime'
 ;
 
 Resource:
