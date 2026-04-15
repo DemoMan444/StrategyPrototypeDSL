@@ -11,6 +11,15 @@ namespace StrategyGameTextbasedPrototype
         }
     }
 
+    public class Randomness
+    {
+        //public int StoneThreshold { get; set; } = 100;
+        public float MinDisadvantage { get; set; } = -0.05f;
+        public float MaxDisadvantage { get; set; } = -0.25f;
+
+        // More randomness rules
+    }
+
     public class Game
     {
         public string name;
@@ -22,6 +31,10 @@ namespace StrategyGameTextbasedPrototype
         private Func<Player, Player, bool> winningCond;
         private Func<Player, Player, bool> losingCond;
         public List<Decision> thisGameDecisions = new List<Decision>();
+        
+        private Randomness _randomness = new Randomness();
+
+        public List<Decision> AvailableDecisions { get; } = new List<Decision>();
 
         private void LogStats()
         {
@@ -74,6 +87,22 @@ namespace StrategyGameTextbasedPrototype
         {
             this.player1.milResources = ply1MilRsr;
             this.player2.milResources = ply2MilRsr;
+            return this;
+        }
+
+        public Game AssignEachPlayerObjectsSame(
+            Dictionary<string, Resources> units,
+            Dictionary<string, Resources> buildings)
+        {
+            return AssignEachPlayerObjects(units, units); // same for both players
+        }
+
+        //public Game SetRandomness(int stoneThreshold, float minDisadvantage, float maxDisadvantage)
+        public Game SetRandomness(float minDisadvantage, float maxDisadvantage)
+        {
+            //_randomness.StoneThreshold = stoneThreshold;
+            _randomness.MinDisadvantage = minDisadvantage;
+            _randomness.MaxDisadvantage = maxDisadvantage;
             return this;
         }
 

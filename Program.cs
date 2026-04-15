@@ -24,9 +24,8 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// ========================
-// GAME SIMULATION (Top-level statements)
-// ========================
+
+// Game simulation
 
 Console.WriteLine("=== Starting Text-Based Strategy Game ===\n");
 
@@ -77,7 +76,5 @@ game.TakeDecision(1, "Attack")
 
 Console.WriteLine("=== Game simulation finished ===\n");
 
-// ========================
-// START WEB SERVER
-// ========================
+
 app.Run();
