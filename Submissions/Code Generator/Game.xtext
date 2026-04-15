@@ -1,0 +1,190 @@
+grammar org.example.games.Games with org.eclipse.xtext.common.Terminals
+
+generate games "http://www.example.org/games/Games"
+
+Model:
+    elements+=TopLevel*
+    game=Game?
+    actionList=ActionList?
+;
+
+TopLevel:
+      Game
+    | Rule
+    | Player
+//    | Decisions
+    | IntVar
+    | Script
+    | Condition
+    | Decision
+;
+
+
+
+Game:
+    'game' name=ID '{'
+                'rule'      '{' rule=[Rule]          '}'
+                'script'    '{' script=[Script]      '}'
+                'Player1' player1=[Player] ';'
+                'Player2' player2=[Player] ';'
+    '}'
+;
+
+
+
+
+enum VarKind: VAR | RESOURCE | MILITARY;
+
+IntVar:
+    kind=VarKind
+    type=Type
+    (
+        'var'      name=ID
+      | 'Resource' '[' name=ID ']'
+      | 'Military' '[' name=ID ']'
+    )
+    '=' init=Expression ';'
+;
+
+Type:
+    name=('String'|'int'|'boolean')
+;
+
+Assignment:
+    target=LValue '=' expression=Expression ';'
+;
+
+
+
+Player:
+    'player' name=ID '{'
+        vars+=IntVar*
+        'health' '=' health=INT
+        ('resources' '{' resources+=IntVar* '}')?
+        ('military' '{' militaryResources+=IntVar* '}')?
+    '}'
+;
+
+
+Rule:
+    'rule' name=ID '{'
+        'win'  ':' winCondition=[Condition]
+        'lose' ':' loseCondition=[Condition]
+    '}'
+;
+
+Condition:
+    'condition' name=ID boolexp=Expression ';'
+;
+
+
+
+//Decisions:
+//    'decisions' name=ID '{'
+//        decisions+=[Decision|ID] (',' decisions+=[Decision|ID])*
+//    '}'
+//;
+
+Decision:
+	
+    'decision' name=ID '('me=[Player] ','other = [Player] ')' body=Block
+;
+
+
+ActionOwner:
+	'player' player=[Player] 'owns' 'decision' decision=[Decision] 
+;
+
+ActionList:
+    'actions' '{'
+        actions+=ActionOwner*
+    '}'
+;
+
+Block:
+    '{' statements+=Statement* '}'
+;
+
+ExpressionStmt:
+    expr=Expression ';'
+;
+
+Statement:
+      Conditional
+    | PrintStmt
+    | ExpressionStmt
+    | IntVar
+    | Assignment
+;
+
+PrintStmt:
+    'print' value=STRING ';'
+;
+
+
+
+Script:
+    'script' name=ID '{'
+        turns+=Turns*
+    '}'
+;
+
+Turns:
+    'turn' index=INT ':'
+        player=[Player]
+        decision=[Decision]
+        ';'
+;
+
+
+
+Conditional:
+    'if' '(' condition=Expression ')'
+        thenBlock=Block
+        ('elif' '(' elifConditions+=Expression ')' elifBlocks+=Block)*
+        ('else' elseBlock=Block)?
+;
+
+
+
+
+LValue:
+      // specific case for direct access to a player's health: "hero.health"
+      {PlayerHealthLValue} player=[Player] '.' 'health'
+    | {PlayerVarLValue} player=[Player] '.' varName=ID   
+    | {VarLValue}      varName=ID                          
+;
+
+
+
+Expression:
+    OrExpression
+;
+
+OrExpression returns Expression:
+    AndExpression ({OrExpression.left=current} 'or' right=AndExpression)*
+;
+
+AndExpression returns Expression:
+    ComparisonExpression ({AndExpression.left=current} 'and' right=ComparisonExpression)*
+;
+
+ComparisonExpression returns Expression:
+    Addition ({Comparison.left=current} op=('=='|'!='|'<'|'>') right=Addition)*
+;
+
+Addition returns Expression:
+    Multiplication (({Plus.left=current} '+' | {Minus.left=current} '-') right=Multiplication)*
+;
+
+Multiplication returns Expression:
+    Primary (({Mult.left=current} '*' | {Div.left=current} '/') right=Primary)*
+;
+
+Primary returns Expression:
+      '(' Expression ')'
+    | {IntConstant}  value=INT
+    | {BoolConstant} value=('true'|'false')
+    | {LValueExpr}   target=LValue
+    | {Not} '!' expression=Primary
+;

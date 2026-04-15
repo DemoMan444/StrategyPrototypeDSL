@@ -1,0 +1,15 @@
+Properties:
+
+Entity
+
+    Ppl
+
+        Employees experience
+
+        Employees age
+
+    Other
+
+        DepartmentType/OrganizationType
+
+        ProductType/Feature
