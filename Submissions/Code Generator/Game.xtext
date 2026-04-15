@@ -4,14 +4,15 @@ generate games "http://www.example.org/games/Games"
 
 Model:
     elements+=TopLevel*
+    game=Game?
+    actionList=ActionList?
 ;
 
 TopLevel:
       Game
-    | Setup
     | Rule
     | Player
-    | Decisions
+//    | Decisions
     | IntVar
     | Script
     | Condition
@@ -22,21 +23,13 @@ TopLevel:
 
 Game:
     'game' name=ID '{'
-        'setup'     '{' setup=[Setup|ID]        '}'
-        'rule'      '{' rule=[Rule|ID]          '}'
-        'decisions' '{' decisions=[Decisions|ID] '}'
-        'script'    '{' script=[Script|ID]      '}'
+                'rule'      '{' rule=[Rule]          '}'
+                'script'    '{' script=[Script]      '}'
+                'Player1' player1=[Player] ';'
+                'Player2' player2=[Player] ';'
     '}'
 ;
 
-Setup:
-    'setup' name=ID '{'
-        vars+=IntVar*
-        ('timelimit' limitName=ID)?            // <-- plain ID, no [IntVar|ID]
-        'player1' '{' player1=[Player|ID] '}'
-        'player2' '{' player2=[Player|ID] '}'
-    '}'
-;
 
 
 
@@ -44,6 +37,7 @@ enum VarKind: VAR | RESOURCE | MILITARY;
 
 IntVar:
     kind=VarKind
+    type=Type
     (
         'var'      name=ID
       | 'Resource' '[' name=ID ']'
@@ -52,6 +46,9 @@ IntVar:
     '=' init=Expression ';'
 ;
 
+Type:
+    name=('String'|'int'|'boolean')
+;
 
 Assignment:
     target=LValue '=' expression=Expression ';'
@@ -63,7 +60,7 @@ Player:
     'player' name=ID '{'
         vars+=IntVar*
         'health' '=' health=INT
-        'resources' '{' resources+=IntVar* '}'
+        ('resources' '{' resources+=IntVar* '}')?
         ('military' '{' militaryResources+=IntVar* '}')?
     '}'
 ;
@@ -71,8 +68,8 @@ Player:
 
 Rule:
     'rule' name=ID '{'
-        'win'  ':' winCondition=[Condition|ID]
-        'lose' ':' loseCondition=[Condition|ID]
+        'win'  ':' winCondition=[Condition]
+        'lose' ':' loseCondition=[Condition]
     '}'
 ;
 
@@ -82,17 +79,27 @@ Condition:
 
 
 
-Decisions:
-    'decisions' name=ID '{'
-        decisions+=[Decision|ID] (',' decisions+=[Decision|ID])*
-    '}'
-;
+//Decisions:
+//    'decisions' name=ID '{'
+//        decisions+=[Decision|ID] (',' decisions+=[Decision|ID])*
+//    '}'
+//;
 
 Decision:
-    'decision' name=ID body=Block
+	
+    'decision' name=ID '('me=[Player] ','other = [Player] ')' body=Block
 ;
 
 
+ActionOwner:
+	'player' player=[Player] 'owns' 'decision' decision=[Decision] 
+;
+
+ActionList:
+    'actions' '{'
+        actions+=ActionOwner*
+    '}'
+;
 
 Block:
     '{' statements+=Statement* '}'
@@ -124,8 +131,8 @@ Script:
 
 Turns:
     'turn' index=INT ':'
-        player=[Player|ID]
-        decision=[Decision|ID]
+        player=[Player]
+        decision=[Decision]
         ';'
 ;
 
@@ -142,7 +149,9 @@ Conditional:
 
 
 LValue:
-      {PlayerVarLValue} player=[Player|ID] '.' varName=ID   
+      // specific case for direct access to a player's health: "hero.health"
+      {PlayerHealthLValue} player=[Player] '.' 'health'
+    | {PlayerVarLValue} player=[Player] '.' varName=ID   
     | {VarLValue}      varName=ID                          
 ;
 
