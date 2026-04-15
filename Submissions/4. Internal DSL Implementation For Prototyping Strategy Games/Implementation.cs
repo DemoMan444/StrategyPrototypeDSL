@@ -5,65 +5,66 @@ namespace StrategyGameTextbasedPrototype
 {
     public class TurnException : Exception
     {
-        public TurnException(string message) : base(message)
-        {
-
+        public TurnException(string message) : base(message) 
+        { 
+        
         }
     }
 
-
-    class Game
+    public class Game
     {
         public string name;
         public int timesetup;
-        Player player1 = new Player();
-        Player player2 = new Player();
+        public Player player1 = new Player();
+        public Player player2 = new Player();
         public int turns = 0;
-        Func<Player, Player, bool> winningCond;
-        Func<Player, Player, bool> losingCond;
 
+        private Func<Player, Player, bool> winningCond;
+        private Func<Player, Player, bool> losingCond;
         public List<Decision> thisGameDecisions = new List<Decision>();
+
         private void LogStats()
         {
-            Console.WriteLine();
-            Console.WriteLine($"===== STATS AFTER TURN {turns} =====");
-            this.player1.PrintStats("Player 1");
-            this.player2.PrintStats("Player 2");
-            Console.WriteLine("====================================");
-            Console.WriteLine();
+            Console.WriteLine($"\n-- Stats after each turn {turns} --");
+            player1.PrintStats("Player 1");
+            player2.PrintStats("Player 2");
+            Console.WriteLine("----\n");
         }
+
         private void CheckEndOfGame()
         {
-            if (this.winningCond == null || this.losingCond == null)
-                return; // nothing configured yet
+            if (winningCond == null || losingCond == null)
+            {
+                // nothing configured yet
+                return; 
+            }
 
-            // Convention: winningCond(candidate, opponent)
-            bool p1Won = winningCond(this.player1, this.player2);
-            bool p2Won = winningCond(this.player2, this.player1);
-            bool p1Lost = losingCond(this.player1, this.player2);
-            bool p2Lost = losingCond(this.player2, this.player1);
+            bool p1Won = winningCond(player1, player2);
+            bool p2Won = winningCond(player2, player1);
+            bool p1Lost = losingCond(player1, player2);
+            bool p2Lost = losingCond(player2, player1);
 
             if (p1Won || p2Lost)
             {
-                Console.WriteLine(">>> Player 1 wins!");
+                Console.WriteLine("Player 1 wins!");
                 LogStats();
-                Environment.Exit(0);
+                return;
             }
-
             if (p2Won || p1Lost)
             {
-                Console.WriteLine(">>> Player 2 wins!");
+                Console.WriteLine("Player 2 wins!");
                 LogStats();
-                Environment.Exit(0);
+                return;
             }
         }
 
-        public Game createGame(string name, int timesetup, Dictionary<string, Resources> ply1Rsr, Dictionary<string, Resources> ply2Rsr, int p1Health, int p2Health)
+        public Game createGame(string name, int timesetup, Dictionary<string, Resources> ply1Rsr,
+            Dictionary<string, Resources> ply2Rsr, int p1Health, int p2Health)
         {
             this.name = name;
+            this.timesetup = timesetup;
             this.player1.resources = ply1Rsr;
             this.player2.resources = ply2Rsr;
-            this.timesetup = timesetup;
             this.player1.Health = p1Health;
             this.player2.Health = p2Health;
             return this;
@@ -82,12 +83,10 @@ namespace StrategyGameTextbasedPrototype
             this.losingCond = LosingConditions;
             return this;
         }
+
         public Game SetDecisions(string DecisionName, Action<Player, Player> DecisionAction)
         {
-            Decision assignment = new Decision();
-            assignment.DecisionName = DecisionName;
-            assignment.DecisionAction = DecisionAction;
-            this.thisGameDecisions.Add(assignment);
+            thisGameDecisions.Add(new Decision { DecisionName = DecisionName, DecisionAction = DecisionAction });
             return this;
         }
 
@@ -110,32 +109,32 @@ namespace StrategyGameTextbasedPrototype
 
             var decision = thisGameDecisions.Find(d => d.DecisionName == DecisionName);
             if (decision == null)
+            {
                 throw new InvalidOperationException($"Unknown decision '{DecisionName}'");
+            }
+            
+            Console.WriteLine($"\n-- Player {playerCount} chooses: {DecisionName} --");
+            decision.DecisionAction(player1, player2);
 
-            decision.DecisionAction(this.player1, this.player2);
             turns++;
-
             LogStats();
             CheckEndOfGame();
-
             return this;
-        }
-        public static void Main(string[] args)
-        {
         }
     }
 
-    class Player
+    public class Player
     {
-
+        // Not used
         private static int playerCount = 0;
-
+        // Not used
         public string playerName;
+
         public int Health;
-        public Dictionary<string, Resources> resources = new Dictionary<string, Resources>();
+        public Dictionary<string, Resources> resources = new();
+        public Dictionary<string, Resources> milResources = new();
 
-        public Dictionary<string, Resources> milResources = new Dictionary<string, Resources>();
-
+        // Not used
         public static int PlayerCount
         {
             get { return playerCount; }
@@ -146,23 +145,19 @@ namespace StrategyGameTextbasedPrototype
             playerCount++;
         }
 
-        public void PrintStats(string PlayerName)
+        public void PrintStats(string label)
         {
-            Console.WriteLine($"Player: {PlayerName}\n");
-            Console.WriteLine("Resources : \n");
-            foreach (var kvp in this.resources)
-            {
-                Console.WriteLine($"{kvp.Key} {kvp.Value.PrintResource()} \n");
-            }
-            foreach (var bvp in this.milResources)
-            {
-                Console.WriteLine($"{bvp.Key} {bvp.Value.PrintResource()}\n");
-            }
-            Console.WriteLine($"Health of this player {this.Health} \n");
+            Console.WriteLine($"-- {label} --");
+            Console.WriteLine($"Health: {Health}");
+            Console.WriteLine("Economy:");
+            foreach (var r in resources.Values) Console.WriteLine($" {r.PrintResource()}");
+            Console.WriteLine("Military:");
+            foreach (var r in milResources.Values) Console.WriteLine($" {r.PrintResource()}");
+            Console.WriteLine();
         }
     }
 
-    class Resources
+    public class Resources
     {
         public string resourceName;
         public int currVal;
@@ -177,6 +172,7 @@ namespace StrategyGameTextbasedPrototype
             this.minVal = minVal;
         }
 
+        // Unused part of the code atm
         public string Name
         {
             get { return resourceName; }
@@ -200,24 +196,21 @@ namespace StrategyGameTextbasedPrototype
             set { minVal = value; }     // setter
         }
 
-        public bool aboveMax()
+        public bool AboveMax()
         {
             return currVal > maxVal;
         }
 
-        public bool belowMin()
+        public bool BelowMin()
         {
             return currVal < minVal;
         }
+        // Unused part of the code end atm
 
-        public string PrintResource()
-        {
-            string str = $"Resource_Name = {this.resourceName} Current_Value = {this.currVal} Max_value = {this.maxVal} Min_value = {this.minVal}";
-            return str;
-        }
+        public string PrintResource() => $"{resourceName}: {currVal} (max:{maxVal}, min:{minVal})";
     }
 
-    class Decision
+    public class Decision
     {
         public string DecisionName;
         public Action<Player, Player> DecisionAction;

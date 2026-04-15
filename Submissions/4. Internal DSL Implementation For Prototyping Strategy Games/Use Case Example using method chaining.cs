@@ -1,4 +1,4 @@
-```
+/*
 var p1Resources = new Dictionary<string, Resources>
             {
                 ["Gold"] = new Resources("Gold", 100, 1000, 0),
@@ -57,4 +57,4 @@ var p1Resources = new Dictionary<string, Resources>
                 .TakeDecision(1, "Attack")   // Turn 2: Player 1 attacks again
                 .TakeDecision(2, "Attack")   // Turn 3: Player 2 attacks
                 .TakeDecision(1, "Attack");  // Turn 4: Player 1 attacks (might kill P2)
-```
+*/

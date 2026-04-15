@@ -1,14 +1,18 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\marko\\Desktop\\StrategyDSLCreatedInDotnet\\StrategyPrototypeDSL\\",
+  "WorkspaceRootPath": "C:\\Users\\marko\\Desktop\\Internal DSL all atm\\StrategyPrototypeDSL\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{08EF36E4-A757-4D73-A47C-82C18FC0EFF9}|StrategyPrototypeDSL.csproj|c:\\users\\marko\\desktop\\strategydslcreatedindotnet\\strategyprototypedsl\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
-      "RelativeMoniker": "D:0:0:{08EF36E4-A757-4D73-A47C-82C18FC0EFF9}|StrategyPrototypeDSL.csproj|solutionrelative:views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+      "AbsoluteMoniker": "D:0:0:{08EF36E4-A757-4D73-A47C-82C18FC0EFF9}|StrategyPrototypeDSL.csproj|c:\\users\\marko\\desktop\\internal dsl all atm\\strategyprototypedsl\\submissions\\4. internal dsl implementation for prototyping strategy games\\implementation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{08EF36E4-A757-4D73-A47C-82C18FC0EFF9}|StrategyPrototypeDSL.csproj|solutionrelative:submissions\\4. internal dsl implementation for prototyping strategy games\\implementation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{08EF36E4-A757-4D73-A47C-82C18FC0EFF9}|StrategyPrototypeDSL.csproj|c:\\users\\marko\\desktop\\strategydslcreatedindotnet\\strategyprototypedsl\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{08EF36E4-A757-4D73-A47C-82C18FC0EFF9}|StrategyPrototypeDSL.csproj|c:\\users\\marko\\desktop\\internal dsl all atm\\strategyprototypedsl\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{08EF36E4-A757-4D73-A47C-82C18FC0EFF9}|StrategyPrototypeDSL.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{08EF36E4-A757-4D73-A47C-82C18FC0EFF9}|StrategyPrototypeDSL.csproj|c:\\users\\marko\\desktop\\internal dsl all atm\\strategyprototypedsl\\views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{08EF36E4-A757-4D73-A47C-82C18FC0EFF9}|StrategyPrototypeDSL.csproj|solutionrelative:views\\home\\index.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
     }
   ],
   "DocumentGroupContainers": [
@@ -18,34 +22,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 5,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "Index.cshtml",
-              "DocumentMoniker": "C:\\Users\\marko\\Desktop\\StrategyDSLCreatedInDotnet\\StrategyPrototypeDSL\\Views\\Home\\Index.cshtml",
-              "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
-              "ToolTip": "C:\\Users\\marko\\Desktop\\StrategyDSLCreatedInDotnet\\StrategyPrototypeDSL\\Views\\Home\\Index.cshtml*",
-              "RelativeToolTip": "Views\\Home\\Index.cshtml*",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAApAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
-              "WhenOpened": "2026-03-04T06:02:23.047Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\marko\\Desktop\\StrategyDSLCreatedInDotnet\\StrategyPrototypeDSL\\Program.cs",
-              "RelativeDocumentMoniker": "Program.cs",
-              "ToolTip": "C:\\Users\\marko\\Desktop\\StrategyDSLCreatedInDotnet\\StrategyPrototypeDSL\\Program.cs",
-              "RelativeToolTip": "Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-04T06:02:05.948Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:131:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
@@ -65,6 +43,45 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{6324226f-61b6-4f28-92ee-18d4b5fe1e48}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Implementation.cs",
+              "DocumentMoniker": "C:\\Users\\marko\\Desktop\\Internal DSL all atm\\StrategyPrototypeDSL\\Submissions\\4. Internal DSL Implementation For Prototyping Strategy Games\\Implementation.cs",
+              "RelativeDocumentMoniker": "Submissions\\4. Internal DSL Implementation For Prototyping Strategy Games\\Implementation.cs",
+              "ToolTip": "C:\\Users\\marko\\Desktop\\Internal DSL all atm\\StrategyPrototypeDSL\\Submissions\\4. Internal DSL Implementation For Prototyping Strategy Games\\Implementation.cs",
+              "RelativeToolTip": "Submissions\\4. Internal DSL Implementation For Prototyping Strategy Games\\Implementation.cs",
+              "ViewState": "AgIAABEAAAAAAAAAAAAuwBoAAAAJAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-15T10:08:41.096Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Index.cshtml",
+              "DocumentMoniker": "C:\\Users\\marko\\Desktop\\Internal DSL all atm\\StrategyPrototypeDSL\\Views\\Home\\Index.cshtml",
+              "RelativeDocumentMoniker": "Views\\Home\\Index.cshtml",
+              "ToolTip": "C:\\Users\\marko\\Desktop\\Internal DSL all atm\\StrategyPrototypeDSL\\Views\\Home\\Index.cshtml",
+              "RelativeToolTip": "Views\\Home\\Index.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAApAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-04T06:02:23.047Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\marko\\Desktop\\Internal DSL all atm\\StrategyPrototypeDSL\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\marko\\Desktop\\Internal DSL all atm\\StrategyPrototypeDSL\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-04T06:02:05.948Z",
+              "EditorCaption": ""
             }
           ]
         }
