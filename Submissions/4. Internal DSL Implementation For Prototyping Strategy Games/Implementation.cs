@@ -20,23 +20,40 @@ namespace StrategyGameTextbasedPrototype
         // More randomness rules
     }
 
-    public class Game
+    public class GamePolicy
     {
-        public string name;
-        public int timesetup;
-        public Player player1 = new Player();
-        public Player player2 = new Player();
-        public int turns = 0;
+        public Func<Player, Player, bool> winningCond;
+        public Func<Player, Player, bool> losingCond;
 
-        private Func<Player, Player, bool> winningCond;
-        private Func<Player, Player, bool> losingCond;
         public List<Decision> thisGameDecisions = new List<Decision>();
-        
-        private Randomness _randomness = new Randomness();
+    
+        public GamePolicy SetWinningLosing(Func<Player, Player, bool> WinningConditions, Func<Player, Player, bool> LosingConditions)
+        {
+            this.winningCond = WinningConditions;
+            this.losingCond = LosingConditions;
+            return this;
+        }
 
-        public List<Decision> AvailableDecisions { get; } = new List<Decision>();
+        public GamePolicy SetDecisions(string DecisionName, Action<Player, Player> DecisionAction)
+        {
+            thisGameDecisions.Add(new Decision { DecisionName = DecisionName, DecisionAction = DecisionAction });
+            return this;
+        }
 
-        private void LogStats()
+        // Maybe to add checking winning losing conditions here
+
+    }
+
+    public class GameEngine
+    {
+        private readonly GamePolicy _policy;
+
+        public GameEngine(GamePolicy policy)
+        {
+            _policy = policy;
+        }
+
+        public static void LogStats(Player player1, Player player2, int turns)
         {
             Console.WriteLine($"\n-- Stats after each turn {turns} --");
             player1.PrintStats("Player 1");
@@ -44,33 +61,54 @@ namespace StrategyGameTextbasedPrototype
             Console.WriteLine("----\n");
         }
 
-        private void CheckEndOfGame()
+        public void CheckEndOfGame(Player player1, Player player2, int turns)
         {
-            if (winningCond == null || losingCond == null)
+            if (_policy.winningCond == null || _policy.losingCond == null)
             {
                 // nothing configured yet
                 return; 
             }
 
-            bool p1Won = winningCond(player1, player2);
-            bool p2Won = winningCond(player2, player1);
-            bool p1Lost = losingCond(player1, player2);
-            bool p2Lost = losingCond(player2, player1);
+            bool p1Won = _policy.winningCond(player1, player2);
+            bool p2Won = _policy.winningCond(player2, player1);
+            bool p1Lost = _policy.losingCond(player1, player2);
+            bool p2Lost = _policy.losingCond(player2, player1);
 
             if (p1Won || p2Lost)
             {
                 Console.WriteLine("Player 1 wins!");
-                LogStats();
+                LogStats(player1, player2, turns);
                 return;
             }
             if (p2Won || p1Lost)
             {
                 Console.WriteLine("Player 2 wins!");
-                LogStats();
+                LogStats(player1, player2, turns);
                 return;
             }
         }
 
+    }
+
+    public class Game
+    {
+        public string name;
+        public int timesetup;
+        public Player player1 = new Player();
+        public Player player2 = new Player();
+        public int turns = 0;
+        
+        public readonly GamePolicy _policy = new GamePolicy();
+        private readonly GameEngine _engine;
+        private Randomness _randomness = new Randomness();
+
+        public List<Decision> AvailableDecisions { get; } = new List<Decision>();
+
+        public Game()
+        {
+            _engine = new GameEngine(_policy);
+        }
+        
         public Game createGame(string name, int timesetup, Dictionary<string, Resources> ply1Rsr,
             Dictionary<string, Resources> ply2Rsr, int p1Health, int p2Health)
         {
@@ -106,19 +144,6 @@ namespace StrategyGameTextbasedPrototype
             return this;
         }
 
-        public Game SetWinningLosing(Func<Player, Player, bool> WinningConditions, Func<Player, Player, bool> LosingConditions)
-        {
-            this.winningCond = WinningConditions;
-            this.losingCond = LosingConditions;
-            return this;
-        }
-
-        public Game SetDecisions(string DecisionName, Action<Player, Player> DecisionAction)
-        {
-            thisGameDecisions.Add(new Decision { DecisionName = DecisionName, DecisionAction = DecisionAction });
-            return this;
-        }
-
         public Game TakeDecision(int playerCount, string DecisionName)
         {
             if (this.turns % 2 == 0)
@@ -136,7 +161,7 @@ namespace StrategyGameTextbasedPrototype
                 }
             }
 
-            var decision = thisGameDecisions.Find(d => d.DecisionName == DecisionName);
+            var decision = _policy.thisGameDecisions.Find(d => d.DecisionName == DecisionName);
             if (decision == null)
             {
                 throw new InvalidOperationException($"Unknown decision '{DecisionName}'");
@@ -146,8 +171,8 @@ namespace StrategyGameTextbasedPrototype
             decision.DecisionAction(player1, player2);
 
             turns++;
-            LogStats();
-            CheckEndOfGame();
+            GameEngine.LogStats(player1, player2, turns);
+            _engine.CheckEndOfGame(player1, player2, turns);
             return this;
         }
     }
