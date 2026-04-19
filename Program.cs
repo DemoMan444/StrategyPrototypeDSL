@@ -29,52 +29,59 @@ app.MapControllerRoute(
 
 Console.WriteLine("=== Starting Text-Based Strategy Game ===\n");
 
-var p1Resources = new Dictionary<string, StrategyGameTextbasedPrototype.Resources>
-{
-    ["Gold"] = new StrategyGameTextbasedPrototype.Resources("Gold", 100, 1000, 0),
-    ["Food"] = new StrategyGameTextbasedPrototype.Resources("Food", 50, 500, 0)
-};
+// Creating the game definition
+var gameDef = StrategyGameTextbasedPrototype.DSL.Game("Test Battle")
+    .Resource("Gold")
+    .Resource("Food")
+    // Swords can be used by units
+    .Resource("Swords")
 
-var p2Resources = new Dictionary<string, StrategyGameTextbasedPrototype.Resources>
-{
-    ["Gold"] = new StrategyGameTextbasedPrototype.Resources("Gold", 80, 1000, 0),
-    ["Food"] = new StrategyGameTextbasedPrototype.Resources("Food", 40, 500, 0)
-};
+    .Unit("Swordsman")
+        .Costs("Gold", 30)
+        .Costs("Food", 15)
+        .End()
 
-var p1MilResources = new Dictionary<string, StrategyGameTextbasedPrototype.Resources>
-{
-    ["Swords"] = new StrategyGameTextbasedPrototype.Resources("Swords", 10, 10, 0)
-};
+    .Unit("Archer")
+        .Costs("Gold", 25)
+        .Costs("Food", 10)
+        .End()
 
-var p2MilResources = new Dictionary<string, StrategyGameTextbasedPrototype.Resources>
-{
-    ["Swords"] = new StrategyGameTextbasedPrototype.Resources("Swords", 8, 10, 0)
-};
+    .Decision("Attack")
+        .Damage(new StrategyGameTextbasedPrototype.Constant { Value = 30 })
+        .End()
 
-var game = new StrategyGameTextbasedPrototype.Game()
-    .createGame("Test Battle", 20, p1Resources, p2Resources, 100, 100)
-    .AssignEachPlayerObjects(p1MilResources, p2MilResources);
+    .Decision("HeavyAttack")
+        .Damage(new StrategyGameTextbasedPrototype.Add
+        {
+            Left = new StrategyGameTextbasedPrototype.Constant { Value = 25 },
+            Right = new StrategyGameTextbasedPrototype.RandomExpr { Min = 5, Max = 15 }
+        })
+        .End()
 
-game._policy.SetWinningLosing(
-    (me, other) => other.Health <= 0,
-    (me, other) => me.Health <= 0)
-    .SetDecisions("Attack", (me, other) =>
-    {
-        Console.WriteLine(">> Attack for 30 damage!");
-        other.Health -= 30;
-    })
-    .SetDecisions("Heal", (me, other) =>
-    {
-        Console.WriteLine(">> Heal for 20 health!");
-        me.Health += 20;
-    });
+    .Decision("Heal")
+        .Damage(new StrategyGameTextbasedPrototype.Constant { Value = -20 })
+        .End()
 
-game.TakeDecision(1, "Attack")
-    .TakeDecision(2, "Heal")
-    .TakeDecision(1, "Attack")
-    .TakeDecision(2, "Attack")
-    .TakeDecision(1, "Attack");
+    .Randomness(min: 0, max: 100)
+    
+    // Validation and linking happens in build
+    .Build();
+
+Console.WriteLine("? Game definition built and validated successfully!\n");
+
+// Running the game
+var engine = new StrategyGameTextbasedPrototype.GameEngine(gameDef);
+
+Console.WriteLine("=== Game Simulation Starts ===\n");
+
+engine.Execute("Attack");        // Player 1 Attacks
+engine.Execute("Heal");          // Player 2 Heals
+engine.Execute("HeavyAttack");   // Player 1 Heavy attacks
+engine.Execute("Attack");        // Player 2 Attacks
+engine.Execute("HeavyAttack");   // Player 1 Heavy attacks again
 
 Console.WriteLine("=== Game simulation finished ===\n");
+Console.WriteLine("Final Health Player 1: " + engine._state.Player1.Health);
+Console.WriteLine("Final Health Player 2: " + engine._state.Player2.Health);
 
 app.Run();

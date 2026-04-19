@@ -1,101 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace StrategyGameTextbasedPrototype
 {
-    public class Player
-    {
-        // Not used
-        private static int playerCount = 0;
-        // Not used
-        public string playerName;
-
-        public int Health;
-        public Dictionary<string, Resources> resources = new();
-        public Dictionary<string, Resources> milResources = new();
-
-        // Not used
-        public static int PlayerCount
-        {
-            get { return playerCount; }
-        }
-
-        public Player()
-        {
-            playerCount++;
-        }
-
-        public void PrintStats(string label)
-        {
-            Console.WriteLine($"-- {label} --");
-            Console.WriteLine($"Health: {Health}");
-            Console.WriteLine("Economy:");
-            foreach (var r in resources.Values) Console.WriteLine($" {r.PrintResource()}");
-            Console.WriteLine("Military:");
-            foreach (var r in milResources.Values) Console.WriteLine($" {r.PrintResource()}");
-            Console.WriteLine();
-        }
-    }
-
-    public class Resources
-    {
-        public string resourceName;
-        public int currVal;
-        public int maxVal;
-        public int minVal;
-
-        public Resources(string name, int currVal, int maxVal, int minVal)
-        {
-            this.resourceName = name;
-            this.currVal = currVal;
-            this.maxVal = maxVal;
-            this.minVal = minVal;
-        }
-
-        // Unused part of the code atm
-        public string Name
-        {
-            get { return resourceName; }
-            set { resourceName = value; }
-        }
-        public int Curr
-        {
-            get { return currVal; }      // getter
-            set { currVal = value; }     // setter
-        }
-
-        public int Max
-        {
-            get { return maxVal; }      // getter
-            set { maxVal = value; }     // setter
-        }
-
-        public int Min
-        {
-            get { return minVal; }      // getter
-            set { minVal = value; }     // setter
-        }
-
-        public bool AboveMax()
-        {
-            return currVal > maxVal;
-        }
-
-        public bool BelowMin()
-        {
-            return currVal < minVal;
-        }
-        // Unused part of the code end atm
-
-        public string PrintResource() => $"{resourceName}: {currVal} (max:{maxVal}, min:{minVal})";
-    }
-
-    public class OldDecision
-    {
-        public string DecisionName;
-        public Action<Player, Player> DecisionAction;
-    }
-    
     // Type system
     public record ResourceId(string Name);
     public record UnitId(string Name);
@@ -169,7 +77,6 @@ namespace StrategyGameTextbasedPrototype
         public PlayerState Player2 = new();
     }
 
-    // An idea to move randomness here instead
     public class RandomConfig
     {
         public int Min = 0;
@@ -186,6 +93,29 @@ namespace StrategyGameTextbasedPrototype
         public Dictionary<string, Decision> Decisions = new();
 
         public RandomConfig Random = new();
+
+        // Lexical scoping: look in current game first, then parent
+        // Hierarchical scoping: units can reference resources defined in parent game
+        public Resource ResolveResource(ResourceId id)
+        {
+            if (Resources.ContainsKey(id))
+                return Resources[id];
+
+            return Parent?.ResolveResource(id);
+        }
+
+        public Decision ResolveDecision(string name)
+        {
+            if (Decisions.ContainsKey(name))
+                return Decisions[name];
+
+            return Parent?.ResolveDecision(name);
+        }
+
+        public RandomConfig ResolveRandom()
+        {
+            return Random ?? Parent?.ResolveRandom();
+        }
     }
 
     // Builders
@@ -212,6 +142,11 @@ namespace StrategyGameTextbasedPrototype
         public GameBuilder Resource(string name)
         {
             var id = new ResourceId(name);
+
+            // Shadowing check: if parent has a resource with the same name, warn about it
+            if (_game.Parent?.ResolveResource(id) != null)
+                Console.WriteLine($"Warning: '{name}' shadows parent resource");
+
             _game.Resources[id] = new Resource { Id = id };
             return this;
         }
@@ -285,7 +220,8 @@ namespace StrategyGameTextbasedPrototype
 
         public GameBuilder End() => _parent;
     }
-    // Validation linking (Bettini)
+
+    // Validation and linking phase (Bettini)
     public static class GameValidator
     {
         public static void Validate(GameDefinition game)
@@ -342,6 +278,34 @@ namespace StrategyGameTextbasedPrototype
                 if (d.Damage == null)
                     throw new Exception($"Decision '{d.Name}' missing damage");
             }
+        }
+    }
+    
+    // public class GameEngineOld
+    // Had _policy
+    // void LogStats
+    // void CheckEndOfGame
+    
+    // Engine
+    public class GameEngine
+    {
+        private GameDefinition _game;
+        public GameState _state = new();
+
+        public GameEngine(GameDefinition game)
+        {
+            _game = game;
+        }
+
+        public void Execute(string decisionName)
+        {
+            var decision = _game.ResolveDecision(decisionName);
+
+            int dmg = decision.Damage.Evaluate(_state, _state.Player1, _state.Player2);
+
+            Console.WriteLine($"Decision {decisionName} deals {dmg}");
+
+            _state.Player2.Health -= dmg;
         }
     }
 }
