@@ -53,10 +53,11 @@ var p2MilResources = new Dictionary<string, StrategyGameTextbasedPrototype.Resou
 
 var game = new StrategyGameTextbasedPrototype.Game()
     .createGame("Test Battle", 20, p1Resources, p2Resources, 100, 100)
-    .AssignEachPlayerObjects(p1MilResources, p2MilResources)
-    ._policy.SetWinningLosing(
-        (me, other) => other.Health <= 0,
-        (me, other) => me.Health <= 0)
+    .AssignEachPlayerObjects(p1MilResources, p2MilResources);
+
+game._policy.SetWinningLosing(
+    (me, other) => other.Health <= 0,
+    (me, other) => me.Health <= 0)
     .SetDecisions("Attack", (me, other) =>
     {
         Console.WriteLine(">> Attack for 30 damage!");
@@ -68,14 +69,12 @@ var game = new StrategyGameTextbasedPrototype.Game()
         me.Health += 20;
     });
 
-/*
 game.TakeDecision(1, "Attack")
     .TakeDecision(2, "Heal")
     .TakeDecision(1, "Attack")
     .TakeDecision(2, "Attack")
     .TakeDecision(1, "Attack");
-*/
-Console.WriteLine("=== Game simulation finished ===\n");
 
+Console.WriteLine("=== Game simulation finished ===\n");
 
 app.Run();
