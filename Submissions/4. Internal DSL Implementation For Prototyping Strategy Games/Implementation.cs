@@ -270,3 +270,194 @@ namespace StrategyGameTextbasedPrototype
         public Action<Player, Player> DecisionAction;
     }
 }
+
+namespace StrategyTextDSL
+{
+    // Type system
+    public record ResourceId(string Name);
+    public record UnitId(string Name);
+
+    public class Resource
+    {
+        public ResourceId Id;
+    }
+
+    // Reference object for linking phase, allows to refer to resources by name before they are defined 
+    public class ResourceReference
+    {
+        public ResourceId Id;
+
+        // After resolution (linking phase)
+        public Resource Resolved;
+    }
+
+    public class Unit
+    {
+        public UnitId Id;
+
+        // References instead of raw IDs
+        public List<(ResourceReference resource, int amount)> Costs = new();
+    }
+
+    // Expression system for decision effects
+    public interface IExpression
+    {
+        int Evaluate(GameState state, PlayerState me, PlayerState other);
+    }
+
+    public class Constant : IExpression
+    {
+        public int Value;
+        public int Evaluate(GameState s, PlayerState me, PlayerState other) => Value;
+    }
+
+    public class RandomExpr : IExpression
+    {
+        public int Min, Max;
+        private static Random rand = new();
+
+        public int Evaluate(GameState s, PlayerState me, PlayerState other)
+            => rand.Next(Min, Max + 1);
+    }
+
+    public class Add : IExpression
+    {
+        public IExpression Left, Right;
+
+        public int Evaluate(GameState s, PlayerState me, PlayerState other)
+            => Left.Evaluate(s, me, other) + Right.Evaluate(s, me, other);
+    }
+
+    public class Decision
+    {
+        public string Name;
+        public IExpression Damage;
+    }
+
+    public class PlayerState
+    {
+        public int Health = 100;
+        public Dictionary<ResourceId, int> Resources = new();
+    }
+
+    public class GameState
+    {
+        public PlayerState Player1 = new();
+        public PlayerState Player2 = new();
+    }
+
+    // An idea to move randomness here instead
+    public class RandomConfig
+    {
+        public int Min = 0;
+        public int Max = 10;
+    }
+
+    public class GameDefinition
+    {
+        public string Name;
+        public GameDefinition Parent;
+
+        public Dictionary<ResourceId, Resource> Resources = new();
+        public Dictionary<UnitId, Unit> Units = new();
+        public Dictionary<string, Decision> Decisions = new();
+
+        public RandomConfig Random = new();
+    }
+
+    // Builders
+    public static class DSL
+    {
+        public static GameBuilder Game(string name) => new GameBuilder(name);
+    }
+
+    public class GameBuilder
+    {
+        private GameDefinition _game = new();
+
+        public GameBuilder(string name)
+        {
+            _game.Name = name;
+        }
+
+        public GameBuilder Extends(GameDefinition parent)
+        {
+            _game.Parent = parent;
+            return this;
+        }
+
+        public GameBuilder Resource(string name)
+        {
+            var id = new ResourceId(name);
+            _game.Resources[id] = new Resource { Id = id };
+            return this;
+        }
+
+        public UnitBuilder Unit(string name)
+        {
+            var unit = new Unit { Id = new UnitId(name) };
+            _game.Units[unit.Id] = unit;
+            return new UnitBuilder(this, unit);
+        }
+
+        public DecisionBuilder Decision(string name)
+        {
+            var d = new Decision { Name = name };
+            _game.Decisions[name] = d;
+            return new DecisionBuilder(this, d);
+        }
+
+        public GameBuilder Randomness(int min, int max)
+        {
+            _game.Random = new RandomConfig { Min = min, Max = max };
+            return this;
+        }
+
+        public GameDefinition Build()
+        {
+            return _game;
+        }
+    }
+
+    public class UnitBuilder
+    {
+        private GameBuilder _parent;
+        private Unit _unit;
+
+        public UnitBuilder(GameBuilder parent, Unit unit)
+        {
+            _parent = parent;
+            _unit = unit;
+        }
+
+        public UnitBuilder Costs(string resourceName, int amount)
+        {
+            _unit.Costs.Add(
+                (new ResourceReference { Id = new ResourceId(resourceName) }, amount)
+            );
+            return this;
+        }
+
+        public GameBuilder End() => _parent;
+    }
+
+    public class DecisionBuilder
+    {
+        private GameBuilder _parent;
+        private Decision _decision;
+
+        public DecisionBuilder(GameBuilder parent, Decision decision)
+        {
+            _parent = parent;
+            _decision = decision;
+        }
+
+        public DecisionBuilder Damage(IExpression expr)
+        {
+            _decision.Damage = expr;
+            return this;
+        }
+
+        public GameBuilder End() => _parent;
+    }
+}
