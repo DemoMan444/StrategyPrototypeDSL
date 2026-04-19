@@ -3,180 +3,6 @@ using System.Collections.Generic;
 
 namespace StrategyGameTextbasedPrototype
 {
-    public class TurnException : Exception
-    {
-        public TurnException(string message) : base(message) 
-        { 
-        
-        }
-    }
-
-    public class Randomness
-    {
-        //public int StoneThreshold { get; set; } = 100;
-        public float MinDisadvantage { get; set; } = -0.05f;
-        public float MaxDisadvantage { get; set; } = -0.25f;
-
-        // More randomness rules
-    }
-
-    public class GamePolicy
-    {
-        public Func<Player, Player, bool> winningCond;
-        public Func<Player, Player, bool> losingCond;
-
-        public List<Decision> thisGameDecisions = new List<Decision>();
-    
-        public GamePolicy SetWinningLosing(Func<Player, Player, bool> WinningConditions, Func<Player, Player, bool> LosingConditions)
-        {
-            this.winningCond = WinningConditions;
-            this.losingCond = LosingConditions;
-            return this;
-        }
-
-        public GamePolicy SetDecisions(string DecisionName, Action<Player, Player> DecisionAction)
-        {
-            thisGameDecisions.Add(new Decision { DecisionName = DecisionName, DecisionAction = DecisionAction });
-            return this;
-        }
-
-        // Maybe to add checking winning losing conditions here
-
-    }
-
-    public class GameEngine
-    {
-        private readonly GamePolicy _policy;
-
-        public GameEngine(GamePolicy policy)
-        {
-            _policy = policy;
-        }
-
-        public static void LogStats(Player player1, Player player2, int turns)
-        {
-            Console.WriteLine($"\n-- Stats after each turn {turns} --");
-            player1.PrintStats("Player 1");
-            player2.PrintStats("Player 2");
-            Console.WriteLine("----\n");
-        }
-
-        public void CheckEndOfGame(Player player1, Player player2, int turns)
-        {
-            if (_policy.winningCond == null || _policy.losingCond == null)
-            {
-                // nothing configured yet
-                return; 
-            }
-
-            bool p1Won = _policy.winningCond(player1, player2);
-            bool p2Won = _policy.winningCond(player2, player1);
-            bool p1Lost = _policy.losingCond(player1, player2);
-            bool p2Lost = _policy.losingCond(player2, player1);
-
-            if (p1Won || p2Lost)
-            {
-                Console.WriteLine("Player 1 wins!");
-                LogStats(player1, player2, turns);
-                return;
-            }
-            if (p2Won || p1Lost)
-            {
-                Console.WriteLine("Player 2 wins!");
-                LogStats(player1, player2, turns);
-                return;
-            }
-        }
-
-    }
-
-    public class Game
-    {
-        public string name;
-        public int timesetup;
-        public Player player1 = new Player();
-        public Player player2 = new Player();
-        public int turns = 0;
-        
-        public readonly GamePolicy _policy = new GamePolicy();
-        private readonly GameEngine _engine;
-        private Randomness _randomness = new Randomness();
-
-        public List<Decision> AvailableDecisions { get; } = new List<Decision>();
-
-        public Game()
-        {
-            _engine = new GameEngine(_policy);
-        }
-        
-        public Game createGame(string name, int timesetup, Dictionary<string, Resources> ply1Rsr,
-            Dictionary<string, Resources> ply2Rsr, int p1Health, int p2Health)
-        {
-            this.name = name;
-            this.timesetup = timesetup;
-            this.player1.resources = ply1Rsr;
-            this.player2.resources = ply2Rsr;
-            this.player1.Health = p1Health;
-            this.player2.Health = p2Health;
-            return this;
-        }
-
-        public Game AssignEachPlayerObjects(Dictionary<string, Resources> ply1MilRsr, Dictionary<string, Resources> ply2MilRsr)
-        {
-            this.player1.milResources = ply1MilRsr;
-            this.player2.milResources = ply2MilRsr;
-            return this;
-        }
-
-        public Game AssignEachPlayerObjectsSame(
-            Dictionary<string, Resources> units,
-            Dictionary<string, Resources> buildings)
-        {
-            return AssignEachPlayerObjects(units, units); // same for both players
-        }
-
-        //public Game SetRandomness(int stoneThreshold, float minDisadvantage, float maxDisadvantage)
-        public Game SetRandomness(float minDisadvantage, float maxDisadvantage)
-        {
-            //_randomness.StoneThreshold = stoneThreshold;
-            _randomness.MinDisadvantage = minDisadvantage;
-            _randomness.MaxDisadvantage = maxDisadvantage;
-            return this;
-        }
-
-        public Game TakeDecision(int playerCount, string DecisionName)
-        {
-            if (this.turns % 2 == 0)
-            {
-                if (playerCount != 1)
-                {
-                    throw new TurnException("Wrong Turn");
-                }
-            }
-            else
-            {
-                if (playerCount != 2)
-                {
-                    throw new TurnException("Wrong Turn");
-                }
-            }
-
-            var decision = _policy.thisGameDecisions.Find(d => d.DecisionName == DecisionName);
-            if (decision == null)
-            {
-                throw new InvalidOperationException($"Unknown decision '{DecisionName}'");
-            }
-            
-            Console.WriteLine($"\n-- Player {playerCount} chooses: {DecisionName} --");
-            decision.DecisionAction(player1, player2);
-
-            turns++;
-            GameEngine.LogStats(player1, player2, turns);
-            _engine.CheckEndOfGame(player1, player2, turns);
-            return this;
-        }
-    }
-
     public class Player
     {
         // Not used
@@ -264,15 +90,12 @@ namespace StrategyGameTextbasedPrototype
         public string PrintResource() => $"{resourceName}: {currVal} (max:{maxVal}, min:{minVal})";
     }
 
-    public class Decision
+    public class OldDecision
     {
         public string DecisionName;
         public Action<Player, Player> DecisionAction;
     }
-}
-
-namespace StrategyTextDSL
-{
+    
     // Type system
     public record ResourceId(string Name);
     public record UnitId(string Name);
@@ -415,6 +238,8 @@ namespace StrategyTextDSL
 
         public GameDefinition Build()
         {
+            // Validating here after building the whole object graph, instead of validating each step in the builders, allows to do more complex checks that require the full context (like circular inheritance or linking references)
+            GameValidator.Validate(_game);
             return _game;
         }
     }
@@ -459,5 +284,64 @@ namespace StrategyTextDSL
         }
 
         public GameBuilder End() => _parent;
+    }
+    // Validation linking (Bettini)
+    public static class GameValidator
+    {
+        public static void Validate(GameDefinition game)
+        {
+            ValidateNoCycles(game);
+            LinkReferences(game);
+            ValidateUnits(game);
+            ValidateDecisions(game);
+        }
+
+        // Circular inheritance
+        private static void ValidateNoCycles(GameDefinition game)
+        {
+            var visited = new HashSet<GameDefinition>();
+            var current = game;
+
+            while (current != null)
+            {
+                if (!visited.Add(current))
+                    throw new Exception($"Circular inheritance at '{current.Name}'");
+
+                current = current.Parent;
+            }
+        }
+
+        // Linking phase
+        private static void LinkReferences(GameDefinition game)
+        {
+            foreach (var unit in game.Units.Values)
+            {
+                foreach (var (refRes, _) in unit.Costs)
+                {
+                    refRes.Resolved = game.ResolveResource(refRes.Id);
+
+                    if (refRes.Resolved == null)
+                        throw new Exception($"Unknown resource '{refRes.Id.Name}'");
+                }
+            }
+        }
+
+        private static void ValidateUnits(GameDefinition game)
+        {
+            foreach (var unit in game.Units.Values)
+            {
+                if (!unit.Costs.Any())
+                    Console.WriteLine($"Warning: Unit '{unit.Id.Name}' has no cost");
+            }
+        }
+
+        private static void ValidateDecisions(GameDefinition game)
+        {
+            foreach (var d in game.Decisions.Values)
+            {
+                if (d.Damage == null)
+                    throw new Exception($"Decision '{d.Name}' missing damage");
+            }
+        }
     }
 }
