@@ -44,11 +44,20 @@ namespace StrategyGameTextbasedPrototype
 
     public class RandomExpr : IExpression
     {
-        public int Min, Max;
+        // Optional override option instead of using RandomConfig values
+        public int? Min, Max;
+
         private static Random rand = new();
 
         public int Evaluate(GameState s, PlayerState me, PlayerState other)
-            => rand.Next(Min, Max + 1);
+        {
+            var config = s.Game.ResolveRandom();
+
+            int min = Min ?? config.Min;
+            int max = Max ?? config.Max;
+
+            return rand.Next(min, max + 1);
+        }
     }
 
     public class Add : IExpression
@@ -73,6 +82,8 @@ namespace StrategyGameTextbasedPrototype
 
     public class GameState
     {
+        public GameDefinition Game;
+
         public PlayerState Player1 = new();
         public PlayerState Player2 = new();
     }
@@ -295,6 +306,7 @@ namespace StrategyGameTextbasedPrototype
         public GameEngine(GameDefinition game)
         {
             _game = game;
+            _state.Game = game;
         }
 
         public void Execute(string decisionName)
